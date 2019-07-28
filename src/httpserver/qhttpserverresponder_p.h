@@ -67,6 +67,8 @@ public:
                     QCoreApplication::instance()->applicationVersion(),
                     QSysInfo::prettyProductName());
         addHeader(QByteArrayLiteral("Server"), server.toUtf8());
+        addHeader(QByteArrayLiteral("Access-Control-Allow-Origin"), "*");
+        addHeader(QByteArrayLiteral("Access-Control-Allow-Methods"), "GET, POST");
     }
 
     inline bool addHeader(const QByteArray &key, const QByteArray &value)
