@@ -89,17 +89,16 @@ public:
     QByteArray body() const;
     QHostAddress remoteAddress() const;
 
-protected:
-    QHttpServerRequest(const QHttpServerRequest &other);
-
 private:
+    Q_DISABLE_COPY(QHttpServerRequest)
+
 #if !defined(QT_NO_DEBUG_STREAM)
     friend Q_HTTPSERVER_EXPORT QDebug operator<<(QDebug debug, const QHttpServerRequest &request);
 #endif
 
     explicit QHttpServerRequest(const QHostAddress &remoteAddress);
 
-    QHttpServerRequestPrivate *d = nullptr;
+    QScopedPointer<QHttpServerRequestPrivate> d;
 };
 
 QT_END_NAMESPACE

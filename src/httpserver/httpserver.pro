@@ -4,6 +4,7 @@ INCLUDEPATH += .
 QT = network core-private
 
 qtHaveModule(websockets): QT += websockets-private
+qtConfig(ssl): QT += sslserver
 
 HEADERS += \
     qthttpserverglobal.h \
@@ -11,6 +12,7 @@ HEADERS += \
     qabstracthttpserver_p.h \
     qhttpserver.h \
     qhttpserver_p.h \
+    qhttpserverliterals_p.h \
     qhttpserverrequest.h \
     qhttpserverrequest_p.h \
     qhttpserverresponder.h \
@@ -26,6 +28,7 @@ HEADERS += \
 SOURCES += \
     qabstracthttpserver.cpp \
     qhttpserver.cpp \
+    qhttpserverliterals.cpp \
     qhttpserverrequest.cpp \
     qhttpserverresponder.cpp \
     qhttpserverresponse.cpp \

@@ -54,14 +54,30 @@ public:
     QHttpServerResponse& operator=(QHttpServerResponse &&other) = delete;
 
     QHttpServerResponse(const StatusCode statusCode);
+
     QHttpServerResponse(const char *data);
+
     QHttpServerResponse(const QString &data);
+
     explicit QHttpServerResponse(const QByteArray &data);
+    explicit QHttpServerResponse(QByteArray &&data);
+
     QHttpServerResponse(const QJsonObject &data);
     QHttpServerResponse(const QJsonArray &data);
+
     QHttpServerResponse(const QByteArray &mimeType,
                         const QByteArray &data,
                         const StatusCode status = StatusCode::Ok);
+    QHttpServerResponse(QByteArray &&mimeType,
+                        const QByteArray &data,
+                        const StatusCode status = StatusCode::Ok);
+    QHttpServerResponse(const QByteArray &mimeType,
+                        QByteArray &&data,
+                        const StatusCode status = StatusCode::Ok);
+    QHttpServerResponse(QByteArray &&mimeType,
+                        QByteArray &&data,
+                        const StatusCode status = StatusCode::Ok);
+
     virtual ~QHttpServerResponse();
     static QHttpServerResponse fromFile(const QString &fileName);
 
@@ -70,8 +86,44 @@ public:
     QByteArray mimeType() const;
 
     StatusCode statusCode() const;
+
+    void addHeader(QByteArray &&name, QByteArray &&value);
+    void addHeader(QByteArray &&name, const QByteArray &value);
+    void addHeader(const QByteArray &name, QByteArray &&value);
+    void addHeader(const QByteArray &name, const QByteArray &value);
+
+    void addHeaders(QHttpServerResponder::HeaderList headers);
+
+    template<typename Container>
+    void addHeaders(const Container &headers)
+    {
+        for (const auto &header : headers)
+            addHeader(header.first, header.second);
+    }
+
+    void clearHeader(const QByteArray &name);
+    void clearHeaders();
+
+    void setHeader(QByteArray &&name, QByteArray &&value);
+    void setHeader(QByteArray &&name, const QByteArray &value);
+    void setHeader(const QByteArray &name, QByteArray &&value);
+    void setHeader(const QByteArray &name, const QByteArray &value);
+
+    void setHeaders(QHttpServerResponder::HeaderList headers);
+
+    bool hasHeader(const QByteArray &name) const;
+    bool hasHeader(const QByteArray &name, const QByteArray &value) const;
+
+    QVector<QByteArray> headers(const QByteArray &name) const;
+
+    virtual void write(QHttpServerResponder &&responder) const;
+
 private:
-    QHttpServerResponse(QHttpServerResponsePrivate *d);
+    QHttpServerResponse(const QByteArray &mimeType,
+                        QHttpServerResponsePrivate *d);
+
+    QHttpServerResponse(QByteArray &&mimeType,
+                        QHttpServerResponsePrivate *d);
 
     QScopedPointer<QHttpServerResponsePrivate> d_ptr;
 };

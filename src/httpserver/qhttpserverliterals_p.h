@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2019 The Qt Company Ltd.
+** Copyright (C) 2019 Mikhail Svetkin <mikhail.svetkin@gmail.com>
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the QtHttpServer module of the Qt Toolkit.
@@ -27,19 +27,8 @@
 **
 ****************************************************************************/
 
-#ifndef QHTTPSERVERRESPONDER_P_H
-#define QHTTPSERVERRESPONDER_P_H
-
-#include <QtHttpServer/qthttpserverglobal.h>
-#include <QtHttpServer/qhttpserverrequest.h>
-#include <QtHttpServer/qhttpserverresponder.h>
-
-#include <QtCore/qcoreapplication.h>
-#include <QtCore/qpair.h>
-#include <QtCore/qpointer.h>
-#include <QtCore/qsysinfo.h>
-
-#include <type_traits>
+#ifndef QHTTPSERVERLITERALS_P_H
+#define QHTTPSERVERLITERALS_P_H
 
 //
 //  W A R N I N G
@@ -51,24 +40,23 @@
 //
 // We mean it.
 
+#include <QtHttpServer/qthttpserverglobal.h>
+
+#include <QtCore/qbytearray.h>
+
 QT_BEGIN_NAMESPACE
 
-class QHttpServerResponderPrivate
+class Q_HTTPSERVER_EXPORT QHttpServerLiterals
 {
-public:
-    QHttpServerResponderPrivate(const QHttpServerRequest &request, QTcpSocket *const socket)
-        : request(request), socket(socket) {
-    }
 
-    const QHttpServerRequest &request;
-#if defined(QT_DEBUG)
-    const QPointer<QTcpSocket> socket;
-#else
-    QTcpSocket *const socket;
-#endif
-    bool bodyStarted{false};
+public:
+    static QByteArray contentTypeHeader();
+    static QByteArray contentTypeXEmpty();
+    static QByteArray contentTypeTextHtml();
+    static QByteArray contentTypeJson();
+    static QByteArray contentLengthHeader();
 };
 
 QT_END_NAMESPACE
 
-#endif // QHTTPSERVERRESPONDER_P_H
+#endif // QHTTPSERVERLITERALS_P_H

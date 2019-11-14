@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2019 The Qt Company Ltd.
+** Copyright (C) 2019 Sylvain Garcia <garcia.6l20@gmail.com>.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the QtHttpServer module of the Qt Toolkit.
@@ -27,48 +27,36 @@
 **
 ****************************************************************************/
 
-#ifndef QHTTPSERVERRESPONDER_P_H
-#define QHTTPSERVERRESPONDER_P_H
+#ifndef QSSLSERVER_H
+#define QSSLSERVER_H
 
-#include <QtHttpServer/qthttpserverglobal.h>
-#include <QtHttpServer/qhttpserverrequest.h>
-#include <QtHttpServer/qhttpserverresponder.h>
+#include <QtSslServer/qtsslserverglobal.h>
 
-#include <QtCore/qcoreapplication.h>
-#include <QtCore/qpair.h>
-#include <QtCore/qpointer.h>
-#include <QtCore/qsysinfo.h>
-
-#include <type_traits>
-
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the Qt API.  It exists for the convenience
-// of QHttpServer. This header file may change from version to
-// version without notice, or even be removed.
-//
-// We mean it.
+#include <QtNetwork/qtcpserver.h>
+#include <QtNetwork/qsslconfiguration.h>
 
 QT_BEGIN_NAMESPACE
 
-class QHttpServerResponderPrivate
+class QSslServerPrivate;
+class Q_SSLSERVER_EXPORT QSslServer : public QTcpServer
 {
+    Q_OBJECT
 public:
-    QHttpServerResponderPrivate(const QHttpServerRequest &request, QTcpSocket *const socket)
-        : request(request), socket(socket) {
-    }
+    QSslServer(QObject *parent = nullptr);
+    QSslServer(const QSslConfiguration &sslConfiguration, QObject *parent = nullptr);
 
-    const QHttpServerRequest &request;
-#if defined(QT_DEBUG)
-    const QPointer<QTcpSocket> socket;
-#else
-    QTcpSocket *const socket;
-#endif
-    bool bodyStarted{false};
+    void setSslConfiguration(const QSslConfiguration &sslConfiguration);
+
+Q_SIGNALS:
+    void sslErrors(QSslSocket *socket, const QList<QSslError> &errors);
+
+protected:
+    void incomingConnection(qintptr handle) override final;
+
+private:
+    Q_DECLARE_PRIVATE(QSslServer)
 };
 
 QT_END_NAMESPACE
 
-#endif // QHTTPSERVERRESPONDER_P_H
+#endif // QSSLSERVER_HPP

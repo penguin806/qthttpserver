@@ -30,6 +30,8 @@
 #include <QtHttpServer/qhttpserverresponder.h>
 #include <QtHttpServer/qabstracthttpserver.h>
 
+#include <private/qhttpserverliterals_p.h>
+
 #include <QtCore/qjsondocument.h>
 #include <QtCore/qfile.h>
 #include <QtCore/qtemporaryfile.h>
@@ -40,6 +42,9 @@
 #include <functional>
 
 QT_BEGIN_NAMESPACE
+
+static const QByteArray headerServerString(QByteArrayLiteral("Server"));
+static const QByteArray headerServerValue(QByteArrayLiteral("Test server"));
 
 class tst_QHttpServerResponder : public QObject
 {
@@ -56,9 +61,13 @@ private slots:
     void defaultStatusCodeJson();
     void writeStatusCode_data();
     void writeStatusCode();
+    void writeStatusCodeExtraHeader();
     void writeJson();
+    void writeJsonExtraHeader();
     void writeFile_data();
     void writeFile();
+    void writeFileExtraHeader();
+    void writeByteArrayExtraHeader();
 };
 
 #define qWaitForFinished(REPLY) QVERIFY(QSignalSpy(REPLY, &QNetworkReply::finished).wait())
@@ -88,7 +97,7 @@ void tst_QHttpServerResponder::defaultStatusCodeNoParameters()
 void tst_QHttpServerResponder::defaultStatusCodeByteArray()
 {
     HttpServer server([](QHttpServerResponder responder) {
-        responder.write(QByteArray(), QByteArrayLiteral("application/x-empty"));
+        responder.write(QByteArray(), QHttpServerLiterals::contentTypeXEmpty());
     });
     auto reply = networkAccessManager->get(QNetworkRequest(server.url));
     qWaitForFinished(reply);
@@ -131,10 +140,18 @@ void tst_QHttpServerResponder::writeStatusCode()
     QCOMPARE(reply->error(), networkError);
     QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader),
              QByteArrayLiteral("application/x-empty"));
-    QCOMPARE(reply->header(QNetworkRequest::ServerHeader), QStringLiteral("%1/%2(%3)")
-             .arg(QCoreApplication::instance()->applicationName())
-             .arg(QCoreApplication::instance()->applicationVersion())
-             .arg(QSysInfo::prettyProductName()).toUtf8());
+}
+
+void tst_QHttpServerResponder::writeStatusCodeExtraHeader()
+{
+    HttpServer server([=](QHttpServerResponder responder) {
+        responder.write({{ headerServerString, headerServerValue }});
+    });
+    auto reply = networkAccessManager->get(QNetworkRequest(server.url));
+    qWaitForFinished(reply);
+    QCOMPARE(reply->bytesAvailable(), 0);
+    QCOMPARE(reply->error(), QNetworkReply::NoError);
+    QCOMPARE(reply->header(QNetworkRequest::ServerHeader), headerServerValue);
 }
 
 void tst_QHttpServerResponder::writeJson()
@@ -144,7 +161,23 @@ void tst_QHttpServerResponder::writeJson()
     auto reply = networkAccessManager->get(QNetworkRequest(server.url));
     qWaitForFinished(reply);
     QCOMPARE(reply->error(), QNetworkReply::NoError);
-    QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader), QByteArrayLiteral("text/json"));
+    QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader),
+             QHttpServerLiterals::contentTypeJson());
+    QCOMPARE(QJsonDocument::fromJson(reply->readAll()), json);
+}
+
+void tst_QHttpServerResponder::writeJsonExtraHeader()
+{
+    const auto json = QJsonDocument::fromJson(QByteArrayLiteral(R"JSON({ "key" : "value" })JSON"));
+    HttpServer server([json](QHttpServerResponder responder) {
+        responder.write(json, {{ headerServerString, headerServerValue }});
+    });
+    auto reply = networkAccessManager->get(QNetworkRequest(server.url));
+    qWaitForFinished(reply);
+    QCOMPARE(reply->error(), QNetworkReply::NoError);
+    QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader),
+             QHttpServerLiterals::contentTypeJson());
+    QCOMPARE(reply->header(QNetworkRequest::ServerHeader), headerServerValue);
     QCOMPARE(QJsonDocument::fromJson(reply->readAll()), json);
 }
 
@@ -184,7 +217,7 @@ void tst_QHttpServerResponder::writeFile()
     QSignalSpy spyDestroyIoDevice(iodevice, &QObject::destroyed);
 
     HttpServer server([&iodevice](QHttpServerResponder responder) {
-        responder.write(iodevice, "text/html");
+        responder.write(iodevice, QHttpServerLiterals::contentTypeTextHtml());
     });
     auto reply = networkAccessManager->get(QNetworkRequest(server.url));
     QTRY_VERIFY(reply->isFinished());
@@ -194,6 +227,54 @@ void tst_QHttpServerResponder::writeFile()
     QCOMPARE(reply->readAll().trimmed(), data);
 
     QCOMPARE(spyDestroyIoDevice.count(), 1);
+}
+
+void tst_QHttpServerResponder::writeFileExtraHeader()
+{
+    auto file = new QFile(QFINDTESTDATA("index.html"), this);
+    QSignalSpy spyDestroyIoDevice(file, &QObject::destroyed);
+
+    HttpServer server([=](QHttpServerResponder responder) {
+        responder.write(
+            file,
+            {
+                 {
+                    QHttpServerLiterals::contentTypeHeader(),
+                    QHttpServerLiterals::contentTypeTextHtml()
+                 },
+                 { headerServerString, headerServerValue }
+            });
+    });
+    auto reply = networkAccessManager->get(QNetworkRequest(server.url));
+    QTRY_VERIFY(reply->isFinished());
+
+    QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader),
+                           QHttpServerLiterals::contentTypeTextHtml());
+    QCOMPARE(reply->header(QNetworkRequest::ServerHeader), headerServerValue);
+    QCOMPARE(reply->readAll().trimmed(), "<html></html>");
+
+    QCOMPARE(spyDestroyIoDevice.count(), 1);
+}
+
+void tst_QHttpServerResponder::writeByteArrayExtraHeader()
+{
+    const QByteArray data("test data");
+    const QByteArray contentType("text/plain");
+
+    HttpServer server([=](QHttpServerResponder responder) {
+        responder.write(
+            data,
+            {
+                 { "Content-Type", contentType },
+                 { headerServerString, headerServerValue }
+            });
+    });
+    auto reply = networkAccessManager->get(QNetworkRequest(server.url));
+    QTRY_VERIFY(reply->isFinished());
+
+    QCOMPARE(reply->header(QNetworkRequest::ContentTypeHeader), contentType);
+    QCOMPARE(reply->header(QNetworkRequest::ServerHeader), headerServerValue);
+    QCOMPARE(reply->readAll(), data);
 }
 
 QT_END_NAMESPACE

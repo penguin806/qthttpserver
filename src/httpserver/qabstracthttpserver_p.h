@@ -70,6 +70,11 @@ public:
     void handleNewConnections();
     void handleReadyRead(QTcpSocket *socket,
                          QHttpServerRequest *request);
+
+#if QT_CONFIG(ssl)
+    QSslConfiguration sslConfiguration;
+    bool sslEnabled = false;
+#endif
 };
 
 QT_END_NAMESPACE

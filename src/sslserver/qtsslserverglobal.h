@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2019 The Qt Company Ltd.
+** Copyright (C) 2019 Sylvain Garcia <garcia.6l20@gmail.com>.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the QtHttpServer module of the Qt Toolkit.
@@ -27,48 +27,23 @@
 **
 ****************************************************************************/
 
-#ifndef QHTTPSERVERRESPONDER_P_H
-#define QHTTPSERVERRESPONDER_P_H
+#ifndef QTSSLSERVERGLOBAL_H
+#define QTSSLSERVERGLOBAL_H
 
-#include <QtHttpServer/qthttpserverglobal.h>
-#include <QtHttpServer/qhttpserverrequest.h>
-#include <QtHttpServer/qhttpserverresponder.h>
-
-#include <QtCore/qcoreapplication.h>
-#include <QtCore/qpair.h>
-#include <QtCore/qpointer.h>
-#include <QtCore/qsysinfo.h>
-
-#include <type_traits>
-
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the Qt API.  It exists for the convenience
-// of QHttpServer. This header file may change from version to
-// version without notice, or even be removed.
-//
-// We mean it.
+#include <QtCore/qglobal.h>
 
 QT_BEGIN_NAMESPACE
 
-class QHttpServerResponderPrivate
-{
-public:
-    QHttpServerResponderPrivate(const QHttpServerRequest &request, QTcpSocket *const socket)
-        : request(request), socket(socket) {
-    }
-
-    const QHttpServerRequest &request;
-#if defined(QT_DEBUG)
-    const QPointer<QTcpSocket> socket;
+#ifndef QT_STATIC
+#  if defined(QT_BUILD_SSLSERVER_LIB)
+#    define Q_SSLSERVER_EXPORT Q_DECL_EXPORT
+#  else
+#    define Q_SSLSERVER_EXPORT Q_DECL_IMPORT
+#  endif
 #else
-    QTcpSocket *const socket;
+#  define Q_SSLSERVER_EXPORT
 #endif
-    bool bodyStarted{false};
-};
 
 QT_END_NAMESPACE
 
-#endif // QHTTPSERVERRESPONDER_P_H
+#endif // QTSSLSERVERGLOBAL_H
